@@ -318,6 +318,17 @@ pytest -q
 
 新规则只需要三步：在 `rules.py` 加一个函数 → 注册进 `RULES` → 补一条测试。
 
+**当前状态**：源码已开源可用，PyPI 发布待授权（见 [发布指南](docs/publishing.md)）。
+在 PyPI 上线前，请用单文件版或 `git clone` + `pip install -e .` 安装。
+
+---
+
+## 项目文档
+
+- [在线演示](https://htmlpreview.github.io/?https://github.com/huanweide/prompt-refiner/blob/main/docs/assets/demo.html) — 浏览器里直接试
+- [推广文案包](docs/promo.md) — 各平台分享用的文案模板
+- [发布指南](docs/publishing.md) — 如何发布到 PyPI
+
 ---
 
 ## License
