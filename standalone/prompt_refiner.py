@@ -89,18 +89,25 @@ POLITE_REQUEST_MARKERS = ["帮我", "写", "生成", "做个", "做一个", "实
 FILLERS = [
     r"^(?:你好|您好|hi|hello|hey)[，,。!！\s]*",
     r"^(?:请问|想问一下|想问下|我想问|麻烦你|麻烦|劳驾)[，,。\s]*",
+    r"^(?:一下|的话|那个|其实|反正)[，,。\s]*",
     r"^(?:帮我|帮忙|请帮我|请你|你能|你能不能|可以帮我|能不能帮我)\s*",
-    r"(?:谢谢|thanks|thank you|辛苦了)[。.!！\s]*$",
-    r"(?:一下吧|一下|的话|然后呢|那个|就是|其实|反正|大概|可能吧)",
+    r"\s*(?:谢谢|多谢|感谢|thanks|thank you|辛苦了)[。.!！~～\s]*$",
+    r"[，,]\s*(?:然后呢|那个|其实|反正|大概|可能吧)\s*[，,]",
+    r"[，,]\s*(?:一下|的话)\s*[，,]",
+    r"(?:然后呢|那个|其实|反正|大概|可能吧|的话|一下吧)[。.!！\s]*$",
     r"(?:尽量|最好能|如果能的话|可以的话)",
 ]
 
 
 def _strip_fillers(text: str) -> str:
+    """剥离客套与冗余，保留任务本体；并清理残留/重复标点。"""
     out = text.strip()
     for pat in FILLERS:
         out = re.sub(pat, "", out, flags=re.IGNORECASE)
-    return re.sub(r"\s{2,}", " ", out).strip(" ，,。.、")
+    out = re.sub(r"^[\s，,。.、；;：:!！?？~～\-]+", "", out)
+    out = re.sub(r"[\s，,。.、；;：:!！~～\-]+$", "", out)
+    out = re.sub(r"([，,。.、；;：:])\1+", r"\1", out)
+    return re.sub(r"\s{2,}", " ", out).strip()
 
 
 def _detect_task(text: str) -> tuple[str, str]:
