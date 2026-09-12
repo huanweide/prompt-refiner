@@ -35,8 +35,17 @@ jobs:
 
       - name: 冒烟测试 —— 单文件版必须能独立运行
         shell: bash
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: "1"
         run: |
-          echo "帮我写个爬虫抓B站数据 谢谢" | python standalone/prompt_refiner.py | head -5
+          # 直接用参数传中文，避免 Windows 下管道编码转换问题
+          OUT=$(python standalone/prompt_refiner.py "帮我写个爬虫抓B站数据 谢谢")
+          echo "$OUT" | head -5
+          # 断言关键结构必须出现
+          echo "$OUT" | grep -q "# 任务" || { echo "缺少 # 任务 节"; exit 1; }
+          echo "$OUT" | grep -q "# 约束" || { echo "缺少 # 约束 节"; exit 1; }
+          echo "单文件版冒烟测试通过"
 
   lint:
     name: 代码规范
