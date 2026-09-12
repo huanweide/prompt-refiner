@@ -1,0 +1,53 @@
+name: 优化效果不对 / Bug 反馈
+description: 某条输入精炼结果不合理、识别错误、或者直接报错
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量贴出**原始输入**和**实际输出**，这能帮我直接复现。
+
+  - type: textarea
+    id: input
+    attributes:
+      label: 你的输入
+      description: 完整贴出来，包括所有口语和标点
+      placeholder: 帮我写个爬虫抓B站数据 谢谢
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际输出
+      description: 把工具返回的内容整段贴过来
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 你期望的输出
+      description: 哪里不对？是任务类型识别错了、约束漏抽了、还是原意被改了？
+    validations:
+      required: true
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: 使用方式
+      options:
+        - 单文件版 standalone/prompt_refiner.py
+        - pip 安装的完整版
+        - 在线演示页
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python 版本
+      placeholder: "3.13.0"
+    validations:
+      required: false
