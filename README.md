@@ -12,7 +12,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)](pyproject.toml)
 
-[English](#english) · [中文](#中文) · [在线体验](#快速开始)
+[English](#english) · [中文](#中文) · [在线体验](#快速开始) · [**▶ 立即试用演示页**](https://htmlpreview.github.io/?https://github.com/huanweide/prompt-refiner/blob/main/docs/assets/demo.html)
 
 </div>
 

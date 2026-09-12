@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptRefiner 在线演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f6f7f9; color: #1a1a1a; line-height: 1.65; padding: 32px 20px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 24px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+  header p { color: #6b7280; font-size: 14px; margin-top: 6px; }
+  .badges { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .badge { background: #fff; border: 1px solid #e5e7eb; border-radius: 999px;
+           padding: 3px 10px; font-size: 12px; color: #4b5563; }
+  .badge.green { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+           overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .panel-head { padding: 10px 14px; border-bottom: 1px solid #e5e7eb;
+                font-size: 13px; font-weight: 600; color: #374151;
+                display: flex; align-items: center; justify-content: space-between;
+                background: #fafbfc; }
+  .panel-head .tag { font-weight: 400; font-size: 12px; color: #9ca3af; }
+  textarea { width: 100%; border: 0; padding: 14px; font-size: 14px; resize: vertical;
+             font-family: inherit; outline: none; min-height: 76px; color: #1a1a1a; }
+  .grid { display: grid; grid-template-columns: 1fr 1.35fr; gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .out { padding: 14px; font-family: "SF Mono", Consolas, Monaco, monospace;
+         font-size: 12.5px; white-space: pre-wrap; word-break: break-word;
+         min-height: 320px; color: #1f2937; background: #fff; }
+  .out .sec { color: #7c3aed; font-weight: 600; }
+  .out .dim { color: #9ca3af; }
+  .btnrow { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; align-items: center; }
+  button { font-family: inherit; font-size: 13px; padding: 8px 16px; border-radius: 8px;
+           border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer;
+           transition: all .15s; }
+  button:hover { border-color: #9ca3af; background: #f9fafb; }
+  button.primary { background: #111827; color: #fff; border-color: #111827; }
+  button.primary:hover { background: #374151; }
+  .samples { display: flex; gap: 6px; flex-wrap: wrap; }
+  .samples button { font-size: 12px; padding: 5px 11px; border-radius: 999px; }
+  .stat { display: flex; gap: 18px; flex-wrap: wrap; padding: 11px 14px;
+          border-top: 1px solid #e5e7eb; background: #fafbfc; font-size: 12.5px; }
+  .stat b { color: #111827; }
+  .stat span { color: #6b7280; }
+  footer { text-align: center; margin-top: 26px; font-size: 12.5px; color: #9ca3af; }
+  footer a { color: #4b5563; text-decoration: none; border-bottom: 1px solid #d1d5db; }
+  .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+          padding: 11px 14px; font-size: 12.5px; color: #92400e; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PromptRefiner 在线演示</h1>
+    <p>把口语变提示词 · 本地规则引擎 · 零依赖零成本</p>
+    <div class="badges">
+      <span class="badge green">零 API Key</span>
+      <span class="badge green">零联网</span>
+      <span class="badge">同输入同输出</span>
+      <span class="badge">中文口语优化</span>
+    </div>
+  </header>
+
+  <div class="note">
+    这是浏览器内运行的简化演示版，规则与 Python 版同构。完整版另含批量处理、质量评分、CI 质量门禁能力。
+  </div>
+
+  <div class="btnrow">
+    <span class="samples" id="samples"></span>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-head">输入 · 随你怎么说 <span class="tag">口语 / 中英夹杂 / 带客套</span></div>
+      <textarea id="input" spellcheck="false">你好，能不能帮我写个 Python 爬虫抓一下 B 站视频的标题和播放量？谢谢</textarea>
+      <div class="btnrow" style="padding: 0 14px 12px; margin: 0;">
+        <button class="primary" onclick="run()">精炼 →</button>
+        <button onclick="document.getElementById('input').value=''">清空</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">输出 · AI 一次就能听懂 <span class="tag">结构化提示词</span></div>
+      <div class="out" id="out"></div>
+      <div class="stat" id="stat"></div>
+    </div>
+  </div>
+
+  <footer>
+    开源项目 <a href="https://github.com/huanweide/prompt-refiner">github.com/huanweide/prompt-refiner</a> · MIT · ReTri
+  </footer>
+</div>
+
+<script>
+var TASKS = [
+  ["code","代码任务",["写代码","写个函数","实现","重构","调试","bug","写脚本","写程序","编程","函数","接口","api","算法","爬虫","脚本","正则","组件","命令行","sql","程序"]],
+  ["write","写作任务",["写一篇","写文章","写文案","写邮件","写报告","写方案","写总结","写小说","写故事","写演讲稿","起草","帮我写","写封","写份","文案","推文"]],
+  ["translate","翻译任务",["翻译","译成","中译英","英译中","translate"]],
+  ["summarize","总结任务",["总结","归纳","提炼","摘要","概括","提取要点","划重点"]],
+  ["explain","解释任务",["解释","讲解","科普","是什么意思","怎么理解","原理","介绍一下"]],
+  ["analyze","分析任务",["分析","评估","对比","优缺点","调研","诊断","排查","找出问题"]],
+  ["transform","改写任务",["改写","润色","重写","扩写","缩写","改一下","调整语气","换个说法"]]
+];
+var ROLES = {code:"资深软件工程师",write:"专业内容创作者",translate:"专业译者（母语级双语）",
+  summarize:"信息提炼专家",explain:"擅长类比讲解的老师",analyze:"严谨的分析顾问",transform:"文字编辑"};
+var DELIVERABLES = [[/邮件|e-?mail/,"邮件"],[/周报|日报|月报|工作总结/,"工作报告"],
+  [/报告|方案|策划|计划书/,"书面报告"],[/推广文案|宣传文案|营销文案|slogan|宣传语/,"文案"],
+  [/小说|故事|剧情|章节|剧本/,"叙事文本"],[/爬虫|脚本|函数|程序|组件|接口|代码/,"代码"],
+  [/PPT|演示文稿|幻灯片|演讲稿/,"演示材料"],[/表格|列表|清单|对照表|思维导图/,"结构化表格"],
+  [/论文|综述|文献/,"学术文本"],[/散文|诗歌|文章|随笔|推文|博客/,"文章"]];
+var AUDIENCE = [[/新手|小白|零基础|初学者|入门/,"零基础新手"],[/专业|专家|同行|开发者|程序员|工程师/,"专业人士"],
+  [/孩子|儿童|小学生|中学生/,"学生"],[/老板|领导|客户|甲方|面试官/,"决策者 / 上级"],[/投资人|用户|消费者|读者/,"目标用户"]];
+var FILLERS = [/^(?:你好|您好|hi|hello|hey)[，,。!！\s]*/i,
+  /^(?:请问|想问一下|想问下|我想问|麻烦你|麻烦|劳驾)[，,。\s]*/,
+  /^(?:帮我|帮忙|请帮我|请你|你能|你能不能|可以帮我|能不能帮我)\s*/,
+  /(?:谢谢|thanks|thank you|辛苦了)[。.!！\s]*$/i,
+  /(?:一下吧|一下|的话|然后呢|那个|就是|其实|反正|大概|可能吧)/g,
+  /(?:尽量|最好能|如果能的话|可以的话)/g];
+var QWORDS = ["是什么","什么是","什么叫","为什么","为何","怎么理解","如何理解","什么意思","是什么意思","哪个","哪些","是否"];
+var POLITE = ["帮我","写","生成","做个","做一个","实现","翻译","总结","改一下","优化","润色","分析","设计","给我","整理","列出"];
+
+function stripFiller(t){
+  var o = t.trim();
+  for (var i = 0; i < FILLERS.length; i++) o = o.replace(FILLERS[i], "");
+  return o.replace(/\s{2,}/g, " ").replace(/^[ ，,。.、]+|[ ，,。.、]+$/g, "");
+}
+function detectTask(t){
+  var l = t.toLowerCase();
+  for (var i = 0; i < TASKS.length; i++) {
+    var kws = TASKS[i][2];
+    for (var j = 0; j < kws.length; j++) if (l.indexOf(kws[j].toLowerCase()) >= 0) return [TASKS[i][0], TASKS[i][1]];
+  }
+  return ["general", "通用任务"];
+}
+function collect(t){
+  var c = [], m;
+  m = /(\d+)\s*字/.exec(t); if (m) c.push("字数限制：" + m[1] + " 字");
+  m = /(?:要点|点|建议|步骤|例子|条|项)\s*(\d+)/.exec(t) || /(\d+)\s*(?:个|条)(?:要点|点|建议|步骤|例子)/.exec(t);
+  if (m) c.push("要点数量：" + m[1] + " 条");
+  if (/正式|严谨|专业/.test(t)) c.push("语气：正式专业");
+  if (/口语|大白话|通俗|易懂|接地气/.test(t)) c.push("语气：口语化通俗");
+  if (/简短|简洁|精简|别啰嗦/.test(t)) c.push("风格：简洁不啰嗦");
+  if (/详细|详尽|细致|深入/.test(t)) c.push("风格：详尽深入");
+  if (/幽默|有趣|生动|活泼/.test(t)) c.push("风格：轻松生动");
+  return c;
+}
+function pick(t, table){
+  for (var i = 0; i < table.length; i++) if (table[i][0].test(t)) return table[i][1];
+  return null;
+}
+function keywords(t){
+  var out = [], m;
+  var rq = /[「『"'“”《]([^」』"'“”》]{2,30})[」』"'“”》]/g;
+  while ((m = rq.exec(t))) out.push(m[1].trim());
+  var re = /\b[A-Za-z][A-Za-z0-9.\-+]{1,20}\b/g;
+  var stop = ["the","and","for","with","that","this","you","are","can"];
+  while ((m = re.exec(t))) if (stop.indexOf(m[0].toLowerCase()) < 0) out.push(m[0]);
+  var seen = {};
+  return out.filter(function (k) {
+    var l = k.toLowerCase();
+    if (seen[l]) return false;
+    seen[l] = 1;
+    return true;
+  }).slice(0, 8);
+}
+function esc(s){ return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+function refine(text){
+  var raw = text.trim(), core = stripFiller(raw);
+  var det = detectTask(raw), type = det[0], label = det[1];
+  var audience = pick(raw, AUDIENCE), deliverable = pick(raw, DELIVERABLES);
+  var kws = keywords(raw);
+  var hasQ = QWORDS.some(function (w) { return raw.indexOf(w) >= 0; }) && /[?？]\s*$/.test(raw);
+  var isQ = hasQ && !POLITE.some(function (w) { return raw.indexOf(w) >= 0; });
+
+  var ctx = [];
+  if (ROLES[type]) ctx.push("角色：" + ROLES[type]);
+  if (deliverable) ctx.push("交付物：" + deliverable);
+  if (audience) ctx.push("目标读者：" + audience);
+
+  var cons = collect(raw);
+  cons.push("不要复述我的问题", "直接给结果，不要寒暄");
+  if (type === "code") cons.push("给出可直接运行的完整代码，并标注关键行注释");
+  else if (type === "write") cons.push("不要出现明显的 AI 套话");
+  else if (type === "analyze") cons.push("区分事实与推测，推测需标注依据");
+  cons.push("保留我原始诉求的核心意思，不要自行加需求或删减重点", "只提供完成任务必需的信息，不扩写背景");
+  if (core.length <= 6) cons.push("输入信息偏少：如关键信息缺失，先提一个最关键的澄清问题再作答");
+
+  var fmt = isQ ? ["输出：先给一句话结论，再给不超过 5 条的支撑理由"]
+    : type === "code" ? ["输出：代码块 + 关键实现说明（不超过 3 句）"]
+    : (type === "write" || type === "transform") ? ["输出：正文 + 一句话说明你做了哪些取舍"]
+    : type === "summarize" ? ["输出：要点列表，每条不超过 25 字"]
+    : ["输出：结构清晰的分点陈述"];
+  if (kws.length) fmt.push("必须围绕这些要素展开：" + kws.join("、"));
+
+  function dedup(a) {
+    var s = {};
+    return a.filter(function (x) {
+      var k = x.trim();
+      if (!k || s[k]) return false;
+      s[k] = 1;
+      return true;
+    });
+  }
+
+  var lines = [];
+  lines.push(["h", "# 任务"]);
+  lines.push(["t", core || raw]);
+  if (ctx.length) { lines.push(["b", ""]); lines.push(["h", "# 上下文"]); dedup(ctx).forEach(function (c) { lines.push(["l", "- " + c]); }); }
+  if (cons.length) { lines.push(["b", ""]); lines.push(["h", "# 约束"]); dedup(cons).forEach(function (c) { lines.push(["l", "- " + c]); }); }
+  if (fmt.length) { lines.push(["b", ""]); lines.push(["h", "# 输出格式"]); dedup(fmt).forEach(function (c) { lines.push(["l", "- " + c]); }); }
+  var saved = raw.length - core.length;
+  if (saved > 0) { lines.push(["b", ""]); lines.push(["d", "（已剥离 " + saved + " 字客套 / 冗余表达）"]); }
+  if (raw !== core) { lines.push(["b", ""]); lines.push(["h", "# 原始诉求（不得改变）"]); lines.push(["d", raw]); }
+
+  var sections = ["# 任务", "# 约束", "# 输出格式"].filter(function (s) {
+    return lines.some(function (l) { return l[1] === s; });
+  });
+
+  return { lines: lines, label: label, type: type, core: core, raw: raw, kws: kws, sections: sections };
+}
+
+function render(res){
+  var out = document.getElementById("out");
+  out.innerHTML = res.lines.map(function (pair) {
+    var k = pair[0], v = pair[1];
+    if (k === "h") return '<span class="sec">' + esc(v) + '</span>';
+    if (k === "d") return '<span class="dim">' + esc(v) + '</span>';
+    if (k === "b") return "";
+    if (k === "l") return '<span class="bullet">' + esc(v) + '</span>';
+    return esc(v);
+  }).join("\n");
+
+  var chars = res.lines.map(function (l) { return l[1]; }).join("").length;
+  var struct = Math.round(res.sections.length / 3 * 100);
+  var pres = 100;
+  if (res.kws.length) {
+    var hit = res.kws.filter(function (k) {
+      return res.lines.some(function (l) { return l[1].indexOf(k) >= 0; });
+    }).length;
+    pres = Math.round(hit / res.kws.length * 100);
+  }
+  document.getElementById("stat").innerHTML =
+    '<span>任务类型 <b>' + res.label + '</b></span>' +
+    '<span>结构分 <b>' + struct + '</b></span>' +
+    '<span>原意保留 <b>' + pres + '</b></span>' +
+    '<span>输出长度 <b>' + chars + '</b> 字符</span>';
+}
+
+var SAMPLES = [
+  ["写个爬虫抓B站数据 谢谢", "你好，能不能帮我写个 Python 爬虫抓一下 B 站视频的标题和播放量？谢谢"],
+  ["写500字推广文案", "帮我写一篇 500 字的推广文案，面向零基础新手，语气轻松"],
+  ["解释什么是闭包", "解释一下什么是闭包"],
+  ["对比React和Vue", "对比一下 React 和 Vue 的优缺点"],
+  ["总结文章要点", "总结一下这篇文章的要点，谢谢"],
+  ["写封道歉邮件", "写封给客户的道歉邮件，语气正式"]
+];
+SAMPLES.forEach(function (s) {
+  var b = document.createElement("button");
+  b.textContent = s[0];
+  b.onclick = function () { document.getElementById("input").value = s[1]; run(); };
+  document.getElementById("samples").appendChild(b);
+});
+
+function run(){
+  var t = document.getElementById("input").value;
+  if (!t.trim()) {
+    document.getElementById("out").textContent = "请先输入内容";
+    document.getElementById("stat").innerHTML = "";
+    return;
+  }
+  render(refine(t));
+}
+run();
+</script>
+</body>
+</html>
