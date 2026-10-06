@@ -31,9 +31,12 @@ dependencies = []
 dev = ["pytest>=7.0"]
 
 [project.urls]
-Homepage = "https://github.com/huanweide/prompt-forge"
-Repository = "https://github.com/huanweide/prompt-forge"
-Issues = "https://github.com/huanweide/prompt-forge/issues"
+# 注意：这里原先全部指向 huanweide/prompt-forge，而该仓库并不存在（实测 404）。
+# 后果是 PyPI 项目页上的「主页 / 源码 / 问题」三个链接全是死链 ——
+# 用户点进去就是 404，是发布后才暴露、但发布前完全能避免的 P0 问题。
+Homepage = "https://github.com/huanweide/prompt-refiner"
+Repository = "https://github.com/huanweide/prompt-refiner"
+Issues = "https://github.com/huanweide/prompt-refiner/issues"
 
 [project.scripts]
 prompt-refiner = "promptrefiner.cli:main"

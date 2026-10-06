@@ -87,6 +87,11 @@ PromptRefiner 的做法是：**装一把不插电的尺子。** 纯本地规则�
 
 把 [`standalone/prompt_refiner.py`](standalone/prompt_refiner.py) 这一个文件复制进你的项目，完事。
 
+> 这个文件由 `scripts/build_standalone.py` 从 `src/promptrefiner/` 自动生成，
+> 和 pip 安装的包**行为完全一致**（有一致性测试守着，CI 里跑）。
+> 别手工改它 —— 改了下次构建会被覆盖，CI 也会因为「未重新生成」而失败。
+> 要改行为请改 `src/` 下的源码，然后 `python scripts/build_standalone.py`。
+
 ```bash
 python prompt_refiner.py "帮我写个爬虫抓B站数据 谢谢"
 echo "写篇500字的推广文案，给新手看" | python prompt_refiner.py
@@ -285,7 +290,10 @@ Best for: **CI pipelines, batch prompt governance, privacy-sensitive environment
 ```
 prompt-refiner/
 ├── standalone/
-│   └── prompt_refiner.py      # 单文件零安装版（推荐入口）
+│   └── prompt_refiner.py      # 单文件零安装版（推荐入口，由 scripts/ 生成，勿手改）
+├── scripts/
+│   ├── build_standalone.py    # 从 src 生成单文件版；加 --check 可在 CI 校验是否过期
+│   └── check_metadata.py      # 校验 pyproject 链接没有指向别的仓库
 ├── src/promptrefiner/
 │   ├── analyzer.py            # 意图分析
 │   ├── rules.py               # 可插拔规则

@@ -1,0 +1,91 @@
+{
+  "repo": "huanweide/prompt-refiner",
+  "owner": "huanweide",
+  "round": 1,
+  "last_run": "2026-10-06",
+  "baseline_commit": "fb72577",
+  "verdict": "keep",
+  "direction": "单点深度特化：意图识别正确性 + 消灭单文件版与包版本的双实现漂移",
+  "decision_reason": "同类 prompt 优化工具几乎全都要调 LLM API（要 key、联网、花钱），本项目「纯本地规则引擎、零依赖、零 API Key」是另一件事而非做得更好，不存在碾压级替代，不做转向。这类工具的全部价值押在「把口语变结构化提示词」这一段上，任务类型一旦判错，整套模板（角色/约束/输出格式）全部走错，所以准确率就是生命线。",
+  "survival_check": {
+    "competitors": [
+      { "name": "fabric (danielmiessler)", "note": "需要 LLM API key，非本地" },
+      { "name": "各类 prompt-optimizer", "note": "绝大多数依赖在线大模型改写" }
+    ],
+    "key_finding": "定位不是「更好的 prompt 优化器」，而是「不需要 key 的那一类」。这条差异化成立，保留。"
+  },
+  "changes": {
+    "fixed_bugs": [
+      {
+        "id": "P0-1",
+        "title": "英文短关键词子串误伤导致任务类型判错",
+        "detail": "_detect_task 用 `kw in text` 朴素子串匹配，于是 api 命中 rapid/capital/therapist、cli 命中 climate/client、code 命中 decode。实测「写一篇关于首都 rapid 发展的文章」被判成代码任务，输出「角色：资深软件工程师 / 输出：代码块」。改为英文关键词要求左右非 ASCII 字母数字下划线，中文仍子串匹配。注意不能用 \\b，因为输入中英夹杂。",
+        "evidence": "tests/test_task_boundary.py（13 条期望 + 12 条关键词断言 + 10 条兜底）"
+      },
+      {
+        "id": "P0-2",
+        "title": "单文件版与包版本行为漂移",
+        "detail": "standalone/prompt_refiner.py 与 src/promptrefiner/ 是两份各自维护的实现。抽取 15 条常见输入，改前有 4 条输出不一致（CLI 工具判定、语言约束、角色设定、capital/therapist 误判）。改为由 scripts/build_standalone.py 从 src 生成，漂移在结构上不可能发生。",
+        "evidence": "tests/test_standalone_parity.py（15 输入 × 输出一致性 + 任务类型一致性 + 关键词 + 错误契约）"
+      },
+      {
+        "id": "P1-1",
+        "title": "原有的一致性测试从未真正生效",
+        "detail": "tests/test_quality_and_batch.py 里的 TestStandaloneParity 用 importlib 手动加载 standalone，但没把模块注册进 sys.modules，而文件里有 @dataclass，dataclass 解析注解时要查 sys.modules[cls.__module__]，直接 AttributeError。而且它只测了 1 条输入（恰好是两版一致的那种）。已修复加载方式。",
+        "note": "这是典型的「假测试比没测试更危险」：它提供了已测的错觉。"
+      },
+      {
+        "id": "P1-2",
+        "title": "pyproject.toml 三个 URL 指向不存在的仓库",
+        "detail": "Homepage/Repository/Issues 全部写成 huanweide/prompt-forge，实测 API 404。发布到 PyPI 后项目页三个链接全是死链。已修正并加 CI 检查。",
+        "evidence": "scripts/check_metadata.py"
+      },
+      {
+        "id": "P2-1",
+        "title": "测试可能测到了别处的同名包",
+        "detail": "本机环境有一个 editable 安装指向另一份目录，pytest 会静默 import 到那份源码。加 conftest.py 把仓库内 src 顶到 sys.path 最前，同时让 clone 下来不安装也能跑测试。"
+      }
+    ],
+    "added": [
+      "scripts/build_standalone.py（生成器 + --check 门禁）",
+      "scripts/check_metadata.py（元数据链接校验）",
+      "conftest.py（保证 import 的是仓库内源码）",
+      "tests/test_task_boundary.py（词边界回归）",
+      "tests/test_standalone_parity.py（双版一致性矩阵）"
+    ],
+    "modified": [
+      "src/promptrefiner/analyzer.py（词边界匹配 + 显式收录 decode）",
+      "standalone/prompt_refiner.py（改为生成产物，324 行 → 707 行）",
+      "pyproject.toml（URL 死链修正）",
+      "tests/test_quality_and_batch.py（修复失效的一致性测试加载方式）",
+      ".github/workflows/ci.yml（加两条真门禁）",
+      "README.md（标注单文件版是生成产物、补充 scripts/ 结构）"
+    ],
+    "untouched": ["quality.py", "batch.py", "tokens.py", "cli.py", "core.py", "renderer.py", "rules.py"]
+  },
+  "self_check": {
+    "pytest": "151 passed（原 93 + 新增 58）",
+    "py39_syntax": "17 个文件全部可解析",
+    "ci_yaml": "OK（jobs: test, lint）",
+    "mutation_tests": "5/5 被拦截，基线全绿",
+    "cli_smoke": "参数模式与 stdin 模式均通过"
+  },
+  "known_mistakes": [
+    "变异测试脚本里的正则经过多层转义后写错（github\\\\.com 变成字面反斜杠），导致「元数据检查没拦住」的假警报 —— 实际是变异根本没生效。教训重申：变异前必须 assert 锚点命中，否则会把自己的 bug 当成门禁失灵。这条上一轮 live-subtitle 已经踩过一次，这轮换个形式又踩了，说明必须固化成流程而非靠记性。",
+    "Edit 时误删了一行赋值导致 NameError —— 编辑测试文件时动了关联行，改完必须立刻重跑。",
+    "一开始想在 analyzer 里顺手补 json / parse 关键词，随即意识到 code 的优先级高于 translate，会导致「把这段 json 翻译一下」被抢成代码任务。已放弃并写下原因：给高优先级类别扩关键词不是免费的收益，它会抢走别的类别的输入。"
+  ],
+  "known_mistakes_clean": [
+    "变异测试的注入必须验证锚点命中，否则「没拦住」可能是自己的锅（第二次踩）",
+    "编辑测试文件要重跑验证，不要假设结构没动",
+    "给高优先级类别扩关键词前，先想清楚它会抢走哪些低优先级类别的输入"
+  ],
+  "local_env_warning": "本机 Desktop/Projects/prompt-refiner 是 editable 安装的另一份副本，落后 origin/main 2 个 commit 且有未提交改动（README.md / CONTRIBUTING.md）。本次刻意没有触碰它 —— 用户的日常工作副本一律只读。合并 PR 后他 pull 时可获得本次修复。",
+  "rollback": "squash 单 commit，一条 git revert 即可整体撤销",
+  "next_round_suggestions": [
+    "把 --check 也接进 release workflow，避免打包时带上一份过期的 standalone",
+    "给 scripts/ 自己也补测试（build_standalone 的 strip/dedup 逻辑目前只被变异测试间接覆盖）",
+    "HARD_CONSTRAINT_PATTERNS 里「点/条」过于宽泛，可能误伤普通量词；可用同一套词边界思路收敛",
+    "中文数字（三年、五个要点）目前识别不到，只有阿拉伯数字能命中"
+  ]
+}
