@@ -68,3 +68,18 @@ jobs:
             exit 1
           fi
           echo "单文件版保持零依赖"
+
+      # 之前 src 包与 standalone 单文件版是两份各写各的实现，
+      # 实测 12 条常见输入里有 4 条输出不一致，而原有的一致性测试
+      # 只覆盖了 1 条恰好一致的输入，等于没测。
+      # 现在单文件版由 scripts/build_standalone.py 生成，这一步兜底：
+      # 任何人手改了 standalone 而没重新生成，CI 立刻失败。
+      - name: 单文件版必须与 src 源码完全一致
+        run: |
+          python scripts/build_standalone.py --check
+
+      # 仓库曾经把 Homepage/Repository/Issues 全指向 huanweide/prompt-forge，
+      # 而那个仓库并不存在 —— PyPI 页面上三个链接全是 404。
+      # 这类「别的项目 / 旧名字残留」只在对外发布后才暴露，必须在 CI 里拦住。
+      - name: 检查项目元数据里没有指向别的仓库的链接
+        run: python scripts/check_metadata.py

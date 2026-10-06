@@ -196,14 +196,26 @@ class TestBatch:
 class TestStandaloneParity:
     """单文件版必须和包版行为一致，否则用户会踩坑。"""
 
+    _STANDALONE_CACHE = None
+
     def _load_standalone(self):
         import importlib.util
+        import sys
         from pathlib import Path
+
+        if TestStandaloneParity._STANDALONE_CACHE is not None:
+            return TestStandaloneParity._STANDALONE_CACHE
 
         path = Path(__file__).parent.parent / "standalone" / "prompt_refiner.py"
         spec = importlib.util.spec_from_file_location("standalone_refiner", path)
         mod = importlib.util.module_from_spec(spec)
+        # 必须先注册到 sys.modules 再 exec：文件里有 @dataclass，而 dataclass
+        # 在解析字段注解时会去查 sys.modules[cls.__module__]。少了这一步会报
+        #   AttributeError: 'NoneType' object has no attribute '__dict__'
+        # —— 看起来是莫名其妙的崩溃，实际是模块没登记。
+        sys.modules["standalone_refiner"] = mod
         spec.loader.exec_module(mod)
+        TestStandaloneParity._STANDALONE_CACHE = mod
         return mod
 
     def test_standalone_importable(self):

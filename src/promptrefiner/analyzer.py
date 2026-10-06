@@ -28,7 +28,11 @@ TASK_PATTERNS: list[tuple[str, str, list[str]]] = [
         ["写代码", "写个函数", "写一个函数", "实现", "重构", "debug", "调试",
          "报错", "bug", "写脚本", "写个脚本", "写程序", "编程", "code", "函数",
          "接口", "api", "算法", "性能优化", "单元测试", "写测试",
-         "爬虫", "脚本", "正则", "组件", "命令行", "cli", "sql", "程序"],
+         "爬虫", "脚本", "正则", "组件", "命令行", "cli", "sql", "程序",
+         # 加了词边界后，"decode" 不再能被 "code" 子串蒙中，必须显式收录。
+         # 这里刻意不收 json / parse 之类：它们常出现在「把这段 json 翻译一下」
+         # 这种非代码诉求里，而 code 的优先级高于 translate，收了就会抢走。
+         "decode"],
     ),
     (
         "write",
@@ -206,12 +210,57 @@ class Intent:
         }
 
 
+_ASCII_WORD = re.compile(r"^[A-Za-z0-9_]+$")
+
+# 英文关键词的两侧边界缓存：同一个关键词会被反复匹配，编译一次复用。
+_BOUNDARY_CACHE: dict[str, "re.Pattern[str]"] = {}
+
+
+def _keyword_boundary_regex(keyword: str) -> "re.Pattern[str]":
+    """为纯 ASCII 关键词构造带词边界的正则。
+
+    为什么需要这个：直接子串匹配会让短英文词误伤大量无关单词。
+    实测踩到的三个：
+
+        "api" 命中 "r-api-d" / "therap-ist" / "capit-al"
+        "cli" 命中 "cli-mate" / "cli-ent"
+        "code" 命中 "de-code" / "co-dependent"
+
+    后果是「写一篇关于首都 rapid 发展的文章」被判成代码任务，
+    整套模板（角色 / 约束 / 输出格式）全部走错 —— 这是最伤的一种错，
+    因为它不报错，只是悄悄给你一份措辞漂亮的错提示词。
+
+    注意不能用 \\b：\\b 依赖 ASCII 与中文的边界定义，
+    而这里输入是中英夹杂（"调用API" 里 API 两侧都是中文），
+    必须显式规定「左右都不能是 ASCII 字母/数字/下划线」。
+    """
+    cached = _BOUNDARY_CACHE.get(keyword)
+    if cached is None:
+        cached = re.compile(
+            r"(?<![A-Za-z0-9_])" + re.escape(keyword.lower()) + r"(?![A-Za-z0-9_])"
+        )
+        _BOUNDARY_CACHE[keyword] = cached
+    return cached
+
+
+def _keyword_hits(text_lowered: str, keyword: str) -> bool:
+    """判断关键词是否命中：英文按词边界，中文按子串。
+
+    中文关键词保持子串匹配，因为中文没有词分隔，
+    「写代码」在「帮我写写代码」里就该算命中。
+    """
+    lowered = keyword.lower()
+    if _ASCII_WORD.match(lowered):
+        return _keyword_boundary_regex(lowered).search(text_lowered) is not None
+    return lowered in text_lowered
+
+
 def _detect_task(text: str) -> tuple[str, str]:
     """按优先级匹配任务类型。返回 (type, label)。"""
     lowered = text.lower()
     for task_type, label, keywords in TASK_PATTERNS:
         for kw in keywords:
-            if kw.lower() in lowered:
+            if _keyword_hits(lowered, kw):
                 return task_type, label
     return "general", "通用任务"
 
