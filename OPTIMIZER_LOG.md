@@ -180,3 +180,5 @@ AttributeError: 'NoneType' object has no attribute '__dict__'
 2. 给 `scripts/` 自己补测试 —— `build_standalone` 的 strip / dedup 逻辑目前只被变异测试间接覆盖。
 3. `HARD_CONSTRAINT_PATTERNS` 里「点 / 条」过于宽泛，可能误伤普通量词，可用同一套词边界思路收敛。
 4. 中文数字（「三年」「五个要点」）目前识别不到，只有阿拉伯数字能命中。
+
+- 2026-10-25 引擎自动修复 S1/S2/L11
