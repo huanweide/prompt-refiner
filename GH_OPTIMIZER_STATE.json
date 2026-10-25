@@ -1,7 +1,7 @@
 {
   "repo": "huanweide/prompt-refiner",
   "owner": "huanweide",
-  "round": 1,
+  "round": 2,
   "last_run": "2026-10-06",
   "baseline_commit": "fb72577",
   "verdict": "keep",
@@ -9,8 +9,14 @@
   "decision_reason": "同类 prompt 优化工具几乎全都要调 LLM API（要 key、联网、花钱），本项目「纯本地规则引擎、零依赖、零 API Key」是另一件事而非做得更好，不存在碾压级替代，不做转向。这类工具的全部价值押在「把口语变结构化提示词」这一段上，任务类型一旦判错，整套模板（角色/约束/输出格式）全部走错，所以准确率就是生命线。",
   "survival_check": {
     "competitors": [
-      { "name": "fabric (danielmiessler)", "note": "需要 LLM API key，非本地" },
-      { "name": "各类 prompt-optimizer", "note": "绝大多数依赖在线大模型改写" }
+      {
+        "name": "fabric (danielmiessler)",
+        "note": "需要 LLM API key，非本地"
+      },
+      {
+        "name": "各类 prompt-optimizer",
+        "note": "绝大多数依赖在线大模型改写"
+      }
     ],
     "key_finding": "定位不是「更好的 prompt 优化器」，而是「不需要 key 的那一类」。这条差异化成立，保留。"
   },
@@ -61,7 +67,15 @@
       ".github/workflows/ci.yml（加两条真门禁）",
       "README.md（标注单文件版是生成产物、补充 scripts/ 结构）"
     ],
-    "untouched": ["quality.py", "batch.py", "tokens.py", "cli.py", "core.py", "renderer.py", "rules.py"]
+    "untouched": [
+      "quality.py",
+      "batch.py",
+      "tokens.py",
+      "cli.py",
+      "core.py",
+      "renderer.py",
+      "rules.py"
+    ]
   },
   "self_check": {
     "pytest": "151 passed（原 93 + 新增 58）",
@@ -87,5 +101,10 @@
     "给 scripts/ 自己也补测试（build_standalone 的 strip/dedup 逻辑目前只被变异测试间接覆盖）",
     "HARD_CONSTRAINT_PATTERNS 里「点/条」过于宽泛，可能误伤普通量词；可用同一套词边界思路收敛",
     "中文数字（三年、五个要点）目前识别不到，只有阿拉伯数字能命中"
+  ],
+  "lastOptimized": "2026-10-25",
+  "status": "optimized",
+  "improvements": [
+    "S1/S2/L11 自动修复(引擎)"
   ]
 }
