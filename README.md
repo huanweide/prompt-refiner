@@ -1,3 +1,11 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="PromptRefiner">
+</p>
+
+<p align="center">
+  <a href="#它解决什么问题">30 秒看懂</a> · <a href="#三个核心承诺">特性</a> · <a href="#快速开始">快速开始</a> · <a href="#自动精炼流程">架构</a> · <a href="#可插拔规则">扩展</a>
+</p>
+
 <div align="center">
 
 # 🔨 PromptRefiner
