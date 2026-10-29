@@ -374,9 +374,6 @@ MIT © [ReTri](https://github.com/huanweide)
 
 开箱即可接入 CI：在流水线中运行本工具，它会输出健康分与严重度；若存在不达标项会以非 0 退出码结束，从而拦下问题提交（具体参数见上方「快速开始」）。
 
-## 赞助支持
-
-如果这个项目帮到了你，欢迎 [点 Star](https://github.com/huanweide/prompt-refiner) 支持；也可微信扫码自愿赞助（收款码见 `sponsor/wechat-qr.png`，作者本人带 Tri 水印的码，纯静态图片、不含任何密钥）。
 
 ## 许可证
 
