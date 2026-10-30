@@ -360,7 +360,7 @@ pytest -q
 - 🩺 代码健康 — 零依赖多轴静态体检：[点此访问](https://github.com/huanweide/doctors)
 ## License
 
-MIT © [ReTri](https://github.com/huanweide)
+MIT © [huanweide](https://github.com/huanweide)
 
 <div align="center">
 
